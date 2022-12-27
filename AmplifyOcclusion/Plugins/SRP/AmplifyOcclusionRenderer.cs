@@ -88,7 +88,7 @@ namespace AmplifyOcclusion
             {
                 cameraData = renderingData.cameraData;
                 camera = cameraData.camera;
-                source = cameraData.renderer.cameraColorTargetHandle;
+                source = cameraData.renderer.cameraColorTarget;
                 if (camera.cameraType != CameraType.Game)
                     return;
                 //var renderer = renderingData.cameraData.renderer;
