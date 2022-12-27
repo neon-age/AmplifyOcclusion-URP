@@ -3,7 +3,7 @@ https://github.com/AmplifyCreations/AmplifyOcclusion \
 Ported in **URP 2022.2**, but might work in older versions.
 
 ### Requirements
-* <b>PostProcessingV2</b> package installed! (uses StdLib.hlsl, need to remove this dependency)
+* <b>com.unity.postprocessing</b> package installed! (uses StdLib.hlsl, I'd need to remove this dependency)
 
 ### How to use
 * Add Amplify Occlusion RendererFeature in URP Renderer Asset
@@ -13,6 +13,8 @@ https://user-images.githubusercontent.com/29812914/209586549-285353c3-1adf-4fdc-
 >Spider Controller in the video: https://github.com/PhilS94/Unity-Procedural-IK-Wall-Walking-Spider
 
 ## Known Issues
+* Skybox is broken in 2021.3
+* Doesn't work with Multi-Camera setup (split-screen, etc)
 * Doesn't work in scene view
 * Temporal Filtering not supported
 * GBuffer Normals not supported
