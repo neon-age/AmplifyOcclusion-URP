@@ -7,13 +7,14 @@ Ported in **URP 2022.2**, but might work in older versions.
 
 ### How to use
 * Add Amplify Occlusion RendererFeature in URP Renderer Asset
+* Enable Depth Texture in URP Asset
 * Add Amplify Occlusion in Volume component
 
 https://user-images.githubusercontent.com/29812914/209586549-285353c3-1adf-4fdc-9627-e702273841e1.mp4
 >Spider Controller in the video: https://github.com/PhilS94/Unity-Procedural-IK-Wall-Walking-Spider
 
 ## Known Issues
-* Skybox is broken in 2021.3
+* Skybox is broken in 2020.3-2021.3
 * Doesn't work with Multi-Camera setup (split-screen, etc)
 * Doesn't work in scene view
 * Temporal Filtering not supported
