@@ -130,8 +130,6 @@ namespace AmplifyOcclusion
 
                 UpdateGlobalShaderConstants_Matrices(cmd, camera);
 
-                //source = cameraData.renderer.cameraColorTarget;
-
                 commandBuffer_FillComputeOcclusion(cmd);
 
                 if (settings.ApplyMethod == AmplifyOcclusionVolume.ApplicationMethod.Debug)
@@ -140,7 +138,6 @@ namespace AmplifyOcclusion
                 }
                 else
                 {
-                    //commandBuffer_FillApplyDebug(cmd, source, source);
                     commandBuffer_FillApplyPostEffect(cmd, source, source, ref renderingData);
                 }
 
@@ -237,18 +234,15 @@ namespace AmplifyOcclusion
             void PerformBlit(CommandBuffer cb, RenderTargetIdentifier destination, Material mat, int pass)
             {
                 //Blit(cb, source, destination, mat, pass);
-                //cb.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
                 //CoreUtils.SetRenderTarget(cb, destination);
-                //cb.SetGlobalTexture("_BlitTexture", source);
                 cb.SetRenderTarget(destination);
                 //cb.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
                 cb.DrawMesh(m_quadMesh, Matrix4x4.identity, mat, 0, pass);
                 //CoreUtils.DrawFullScreen(cb, mat, pass);
-                //cb.DrawMesh(m_quadMesh, Matrix4x4.identity, mat, 0, pass);
             }
             void PerformBlit(CommandBuffer cb, Material mat, int pass)
             {
-                //cb.DrawMesh(m_quadMesh, Matrix4x4.identity, mat, 0, pass);
+                cb.DrawMesh(m_quadMesh, Matrix4x4.identity, mat, 0, pass);
             }
 
             // Render Materials
