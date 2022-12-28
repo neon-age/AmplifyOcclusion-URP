@@ -63,7 +63,22 @@ namespace AmplifyOcclusion
             private RenderTargetIdentifier source;
 
             static private Mesh m_quadMesh = null;
+            static Texture2D defaultRampTex;
 
+            private void createDefaultRamp()
+            {
+                if (defaultRampTex != null)
+                    return;
+                const int width = 128;
+                defaultRampTex = new Texture2D(width, 1, TextureFormat.RGBA32, false);
+                var gradient = new Gradient() { colorKeys = new GradientColorKey[] { 
+                    new GradientColorKey(new Color(0, 0, 0, 1), 0), 
+                    new GradientColorKey(new Color(1, 1, 1, 1), 1), 
+                    }};
+                for (int x = 0; x < width; x++)
+                    defaultRampTex.SetPixel(x, 0, gradient.Evaluate((float)x / width));
+                defaultRampTex.Apply(false, true);
+            }
             private void createQuadMesh()
             {
                 if (m_quadMesh != null)
@@ -97,6 +112,7 @@ namespace AmplifyOcclusion
                 settings = VolumeManager.instance.stack.GetComponent<AmplifyOcclusionVolume>();
 
                 createQuadMesh();
+                createDefaultRamp();
                 checkMaterials(true);
                 UpdateGlobalShaderConstants(cmd, camera);
                 checkParamsChanged(camera);
@@ -104,6 +120,9 @@ namespace AmplifyOcclusion
                 updateParams();
 
                 Shader.SetGlobalFloat("_RenderViewportScaleFactor", 1.0f);
+
+                var rampTex = settings.RampTexture.value;
+                m_applyOcclusionMat.SetTexture("_OcclusionRamp", rampTex == null ? defaultRampTex : rampTex );
 
                 //renderPassEvent = AfterOpaque ? RenderPassEvent.AfterRenderingOpaques : RenderPassEvent.AfterRenderingPrePasses + 1;
 
@@ -138,6 +157,7 @@ namespace AmplifyOcclusion
                 }
                 else
                 {
+                    //commandBuffer_FillApplyDebug(cmd, source, source);
                     commandBuffer_FillApplyPostEffect(cmd, source, source, ref renderingData);
                 }
 
@@ -270,6 +290,7 @@ namespace AmplifyOcclusion
 
 
             private RenderTextureFormat m_occlusionRTFormat = RenderTextureFormat.RGHalf;
+            //private RenderTextureFormat m_occlusionRTFormat = RenderTextureFormat.RGHalf;
             private RenderTextureFormat m_accumTemporalRTFormat = RenderTextureFormat.ARGB32;
             private RenderTextureFormat m_motionIntensityRTFormat = RenderTextureFormat.R8;
 

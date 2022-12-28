@@ -129,9 +129,11 @@ inline half2 SampleStepsDynamicDepthMips(	const int aStepCount,
 											const half aTwoOverSquaredRadius,
 											const half aThicknessDecay,
 											const half3 aVpos,
-											const half3 aVdir )
+											const half3 aVdir,
+											out half2 outUv )
 {
 	half2 h = half2( -1.0, -1.0 );
+	half2 oUv = 0;
 
 	UNITY_UNROLL
 	for ( int s = 0; s < aStepCount; s++ )
@@ -139,7 +141,7 @@ inline half2 SampleStepsDynamicDepthMips(	const int aStepCount,
 		const half2 uvOffset = aSlideDir_x_TexelSize * max( aStepRadius * ( (half)s + aInitialRayStep ), 1.0 + (half)s );
 
 		const half4 uv = aScreenPos.xyxy + float4( +uvOffset.xy, -uvOffset.xy );
-
+		outUv = uv.xy;
 		// ds.v / ||ds||
 		// dt.v / ||dt||
 		half3 ds, dt;
@@ -180,6 +182,7 @@ inline half2 SampleStepsDynamicDepthMips(	const int aStepCount,
 	return h;
 }
 
+sampler2D _MainTex;
 
 inline half2 SampleSteps(	const int aStepCount,
 							const half2 aScreenPos,
@@ -189,9 +192,13 @@ inline half2 SampleSteps(	const int aStepCount,
 							const half aTwoOverSquaredRadius,
 							const half aThicknessDecay,
 							const half3 aVpos,
-							const half3 aVdir )
+							const half3 aVdir,
+							out half2 outUv,
+							out half4 outColor)
 {
 	half2 h = half2( -1.0, -1.0 );
+	outUv = 0;
+	outColor = 0;
 
 	UNITY_UNROLL
 	for ( int s = 0; s < aStepCount; s++ )
@@ -201,6 +208,10 @@ inline half2 SampleSteps(	const int aStepCount,
 		// s2016_pbs_activision_occlusion - Slide 54
 
 		const half4 uv = aScreenPos.xyxy + float4( +uvOffset.xy, -uvOffset.xy );
+		//if (outUv.x == 0)
+		//outUv = uv.xy - aStepRadius * 0.001;
+		outUv = uv.xy;
+	
 
 		// ds.v / ||ds||
 		half3 ds = FetchPosition0( uv.xy ).xyz - aVpos.xyz;
@@ -211,12 +222,18 @@ inline half2 SampleSteps(	const int aStepCount,
 		const half2 dsdt = half2( dot( ds, ds ), dot( dt, dt ) );
 		const half2 rLength = rsqrt( dsdt + ( 0.0001 ).xx );
 
+		//outColor += tex2D(_MainTex, uv.xy);
+
 		half2 H = half2( dot( ds, aVdir ), dot( dt, aVdir ) ) * rLength.xy;
+
+			
 
 		// "Conservative attenuation" - s2016_pbs_activision_occlusion - Slide 103
 		// "Our attenuation function is a linear blending from 1 to 0 from a given,
 		//  large enough distance, to the maximum search radius." GTAO - Page 4
 		const half2 attn = saturate( dsdt.xy * aTwoOverSquaredRadius.xx );
+
+		
 
 		H = lerp( H, h, attn );
 
@@ -225,6 +242,7 @@ inline half2 SampleSteps(	const int aStepCount,
 
 	return h;
 }
+
 
 
 void GetGTAO(	const v2f_in ifrag,
@@ -261,7 +279,7 @@ void GetGTAO(	const v2f_in ifrag,
 		outDepth = HALF_MAX;
 		outRGBA = half4( (1.0).xxxx );
 
-		//return;
+		return;
 	}
 	//outDepth = sampledDepth;
 	//return;
@@ -290,6 +308,7 @@ void GetGTAO(	const v2f_in ifrag,
 	const half noiseSpatialDirections_x_piOver_directionCount = noiseSpatialDirections * piOver_directionCount;
 
 	half occlusionAcc = 0.0;
+	half4 colorBleed = 0;
 
 	for ( int dirCnt = 0; dirCnt < directionCount; dirCnt++ )
 	{
@@ -305,6 +324,9 @@ void GetGTAO(	const v2f_in ifrag,
 		const half2 slideDir_x_TexelSize = sliceDir.xy * _AO_Target_TexelSize.xy;
 
 		half2 h;
+		half4 aColorBleed = 0;
+		half2 oUv = 0;
+		half4 oColor =0;
 
 		if( useDynamicDepthMips == true )
 		{
@@ -316,7 +338,8 @@ void GetGTAO(	const v2f_in ifrag,
 												twoOverSquaredRadius,
 												thicknessDecay,
 												vpos.xyz,
-												vdir );
+												vdir,
+												oUv );
 		}
 		else
 		{
@@ -328,7 +351,9 @@ void GetGTAO(	const v2f_in ifrag,
 								twoOverSquaredRadius,
 								thicknessDecay,
 								vpos.xyz,
-								vdir );
+								vdir,
+								oUv,
+								oColor);
 		}
 
 		// "Project (and normalize) the normal to the slice plane for the integration" - s2016_pbs_activision_occlusion - Slide 62
@@ -350,19 +375,30 @@ void GetGTAO(	const v2f_in ifrag,
 		h.y = gamma + min( +h.y - gamma, +UNITY_HALF_PI );
 
 		const half sin_gamma = sin( gamma );
+
+			
 		const half2 h2 = 2.0 * h;
 
+		//colorBleed += tex2D(_MainTex, normalProjected.xy);
+		
 		const half2 innerIntegral = ( -cos( h2 - gamma ) + cos_gamma + h2 * sin_gamma );
 
 		// "Multiply each slice contribution by the length of the projected normal" - s2016_pbs_activision_occlusion - Slide 62
 		occlusionAcc += ( projLength + wallDarkeningCorrection ) * 0.25 * ( innerIntegral.x + innerIntegral.y + _AO_Bias );
+
+		//colorBleed += tex2D(_MainTex, oUv);
+		//colorBleed += tex2D(_MainTex, screenPos + normalProjected * 0.1);
+		//colorBleed += lerp ( 0, oColor / stepCount, occlusionAcc);
 	}
 
 	occlusionAcc /= (half)directionCount;
+	//colorBleed /= (half)directionCount;
 
 	const half outAO = saturate( occlusionAcc );
 
 	outRGBA = half4( (1).xxx, outAO );
+	//outRGBA = colorBleed;
+	outRGBA.a = outAO;
 
 	outDepth = DEPTH_SCALE * Linear01Depth( sampledDepth );
 }

@@ -14,7 +14,9 @@ Shader "Hidden/Amplify Occlusion/ApplyPostProcessing"
 		#include "../../Resources/TemporalFilter.cginc"
 		#include "../../Resources/ApplyPostEffect.cginc"
 
-		TEXTURE2D_SAMPLER2D( _MainTex, sampler_MainTex );
+		//TEXTURE2D_SAMPLER2D( _MainTex, sampler_MainTex );
+		sampler2D _MainTex;
+		SamplerState sampler_MainTex;
 
 		PostEffectOutputTemporal ApplyPostEffectTemporal( v2f_in IN, const bool aUseMotionVectors )
 		{
@@ -27,7 +29,7 @@ Shader "Hidden/Amplify Occlusion/ApplyPostProcessing"
 
 			PostEffectOutputTemporal OUT;
 
-			const half4 srcColor = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, UnityStereoTransformScreenSpaceTex( screenPos ) );
+			const half4 srcColor = tex2D( _MainTex, UnityStereoTransformScreenSpaceTex( screenPos ) );
 
 			if( occlusionDepth.y < HALF_MAX )
 			{
@@ -68,7 +70,7 @@ Shader "Hidden/Amplify Occlusion/ApplyPostProcessing"
 
 			const half4 occlusionRGBA = CalcOcclusion( occlusionLinearEyeDepth.x, occlusionLinearEyeDepth.y );
 			
-			const half4 srcColor = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, UnityStereoTransformScreenSpaceTex( screenPos ) );
+			const half4 srcColor = tex2D( _MainTex, UnityStereoTransformScreenSpaceTex( screenPos ) );
 
 			const half4 outColor = half4( srcColor.rgb * lerp( (1).xxx, occlusionRGBA.rgb, (srcColor.a).xxx ), srcColor.a );
 
@@ -81,23 +83,10 @@ Shader "Hidden/Amplify Occlusion/ApplyPostProcessing"
 			UNITY_SETUP_INSTANCE_ID( IN );
 			UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX( IN );
 
-			half2 screenPos = IN.uv.xy;
+			const half4 srcColor = tex2D( _MainTex, IN.uv);
+			half4 outColor = _ApplyPostEffect(IN, srcColor);
 
-			half2 occlusionDepth = FetchOcclusionDepth( screenPos );
-			//half4 occlusionDepth = SAMPLE_TEXTURE2D( _AO_CurrOcclusionDepth, sampler_AO_CurrOcclusionDepth, screenPos );
-
-			const half linearEyeDepth = occlusionDepth.y * _AO_BufDepthToLinearEye;
-
-			const half4 occlusionRGBA = CalcOcclusion( occlusionDepth.x, linearEyeDepth );
-
-			//_AO_CurrOcclusionDepth
-			
-
-			const half4 srcColor = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, UnityStereoTransformScreenSpaceTex( screenPos ) );
-
-			const half4 outColor = half4( srcColor.rgb * lerp( (1).xxx, occlusionRGBA.rgb, (srcColor.a).xxx ), srcColor.a );
-
-			return outColor;
+			return lerp(srcColor, outColor, _AO_Levels.a);
 		}
 	ENDHLSL
 

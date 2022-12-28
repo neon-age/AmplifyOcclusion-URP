@@ -15,7 +15,11 @@ half4 GTAO( const v2f_in ifrag, const bool useDynamicDepthMips, const int direct
 
 	GetGTAO( ifrag, useDynamicDepthMips, directionCount, sampleCount / 2, normalSource, outDepth, outRGBA );
 
-	return half4( outRGBA.a, outDepth, 0, 0 );
+	// https://stackoverflow.com/questions/41566049/understanding-unitys-rgba-encoding-in-float-encodefloatrgba
+	//outRGBA = min(outRGBA, 0.9999);
+	//half packedRGBA = __DecodeFloatRGBA(outRGBA);
+
+	return half4(outRGBA.a, outDepth, 0, 0);
 }
 
 
@@ -43,7 +47,6 @@ inline half4 ComputeCombineDownsampledOcclusionDepth( const half2 aScreenPos, co
 	const half s = ( screenPosPixelsDelta.y < 0.5 )?-1.0:1.0;
 
 	half2 odC = FetchOcclusionDepth( sPosAdjusted );
-
 	half2 odL = FetchOcclusionDepth( sPosAdjusted + half2( -1.0, 0.0 ) * _AO_CurrOcclusionDepth_TexelSize.xy );
 	half2 odR = FetchOcclusionDepth( sPosAdjusted + half2( +1.0, 0.0 ) * _AO_CurrOcclusionDepth_TexelSize.xy );
 	half2 odM = FetchOcclusionDepth( sPosAdjusted + half2(  0.0,   s ) * _AO_CurrOcclusionDepth_TexelSize.xy );

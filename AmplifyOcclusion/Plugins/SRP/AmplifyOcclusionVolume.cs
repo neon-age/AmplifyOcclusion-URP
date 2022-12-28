@@ -35,7 +35,7 @@ namespace AmplifyOcclusion
 
         [Tooltip("Number of samples per pass.")]
         public SampleCountLevelVolumeParameter SampleCount = new SampleCountLevelVolumeParameter { value = SampleCountLevel.Medium, overrideState = true };
-
+        public NoInterpTextureParameter RampTexture = new NoInterpTextureParameter(null);
         //[Tooltip("Source of per-pixel normals: None = All, GBuffer = Deferred.")]
         //public PerPixelNormalSourceVolumeParameter PerPixelNormals = new PerPixelNormalSourceVolumeParameter { value = PerPixelNormalSource.None };
 
